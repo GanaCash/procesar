@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SurveyWall + Firebase</title>
+  <script type="module" src="/firebase.js"></script>
+</head>
+<body>
+  <h1>Ofertas y puntos</h1>
+  <p>Tu ID: <span id="uid">...</span></p>
+  <p>Tus puntos: <span id="pts">0</span></p>
+  <iframe id="offer" width="100%" height="600"></iframe>
+
+  <script type="module">
+    import { db, ref, get } from './firebase.js';
+
+    let uid = localStorage.getItem("user_id");
+    if (!uid) {
+      uid = crypto.randomUUID();
+      localStorage.setItem("user_id", uid);
+    }
+    document.getElementById("uid").textContent = uid;
+
+    const offerwall = `https://wall.wannads.com/wall?appid=67e470e4062c6323316149&user_id=${uid}`;
+    document.getElementById("offer").src = offerwall;
+
+    const userRef = ref(db, `users/${uid}/points`);
+    get(userRef).then(snapshot => {
+      document.getElementById("pts").textContent = snapshot.val() || 0;
+    });
+  </script>
+</body>
+</html>
