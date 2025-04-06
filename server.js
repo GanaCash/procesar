@@ -1,7 +1,6 @@
 const express = require('express');
 const md5 = require('md5');
 const admin = require('firebase-admin');
-const fs = require('fs').promises;
 const path = require('path');
 
 const app = express();
@@ -9,11 +8,10 @@ const port = 3000;
 
 // Configuración
 const secret = '461e007d2c'; // Reemplaza con tu SECRET de Wannads
-const isVercel = process.env.VERCEL; // Detecta si estamos en Vercel
 
 // Credenciales de Firebase directamente en el código (NO recomendado para producción)
 const serviceAccount = {
-    type": "service_account",
+   type": "service_account",
   "project_id": "invitaciones-7d704",
   "private_key_id": "d87c14db718226fb1021314a8eaa9b6ed9af2a41",
   "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDIhEZ/5sJJDUP2\n8bg7nnjhbb+lADNgJYe21Ke9UPBnglhuDT96piDxkEE9seiZ4vPFXTh1T+YCdCYs\nw8x87XonEu6lNPRosVKig8LHb7bZ97gTISl4QDHjT6LrUTmHpUIfdyytjSF+D5WF\nkqUDPWelIldhNwEjB27I9AQuSa4v1CxRyqAl1DDAImlucohcOphU6H/odNodrXJ5\nQ+RQUsjLG+a38xUI44gkSi1QBG58sSbpIaTulVSPz2GBm4/lDeldH+DtAqeFmc7u\nox3Ih/x1FDYtpBUvkXZ7mmpBbXMtNR/03gkx5J/GoaG+OuzgBuDNW6PCovW+LXTU\nFhZu0XELAgMBAAECggEACz5WNlbJ/yRQyCM5XufIbxo4fE08vuqWfRCDOrDerMHY\n0+Gcn8klS2ujf4z0diiNMxHCmDAQ6C37dALN+mqrMPoKoACOUePbi9mn4tynRqVG\n0Opznla51WgCQoACofyzbqXqlJgM0DpEepcZ90q1VJj5MwN4EK7v2IciSDbWdGpa\nWQ9XZCoyage6Dfi5ZyFu0YDsn64VWYEa4WFRlHCYuUeDmjdXNrfWh56Obn2jsNdN\nKhDmCBKOnPERNc70BOUOV3S/3cPnk5jTSXH2iA1HUXE35Nv7eHQhRsGLPEN7tQvh\n152t5Aj7AhfwhoRQ9XdnAYmJlsbMHbY4FtNI7taaGQKBgQDurJG7pH/eRMTn3R3g\nB02rgAF4TTyYl5AlgWjjifUoPM7XQIHBHcbBgATZv6GVgdiJ7e0KGmI1p1/OKms3\nszAxJC5WsgqrCimOP7cchTwrAVIME7avHooJ8JKi1/rNeF/65IcdXnMvCdOg4wrQ\nntD3Uv7a9yWTOI79YR/72XqI8wKBgQDXEppsmmPr1EfA9XamdgDu/uF4lLQUdRi7\n8UIqRqk/IRB/JMGzWkeFKVI43kC5KCafshzsl5M4NRNpkxxi7vkFzZAvyJMjB2jy\nNldMmjbJ+5xEf4ciNSRsMOwTruACN4Cps81k8YL+ESidczoV4lPeebWPo0F1ezRK\ncZOs2wL9iQKBgFHogT7vLj6+RQD5flYyy3HuxRJfF0uawApPBgsIfkznyWhPp/f5\nWwtu/rsnq7FeVUzIjU+pTEjzfsqG/jKoWQKUUx7HjSeznh1GOnYcN1De7CRe45Pn\nnCHbIMen7Vd0VyQIJ2Jp1oevDKSrJjwANOCb6ACHTqrefxvvqAVLVmUHAoGACrOd\nRXwlLq3gaCSOo9fJUhsSowpbL41oDqoBjdL4RvDhPkJY9RCv8FtPAQ9mDxCFY3rc\nX5VnOOvDLISqa+3SLEy/OPF1CNAsk6jKjUA7K6++ZdYmpjgYuN1yUcRo1xNl7ovI\n05YE25mE+Nir8jzRyYcq1pvb/PmFb5LZM0eujWkCgYBhiOym4rX53T+882sDuEkz\nl2J6gqSO5rLSufB0ya+lZC6KAz9mHLK6Xp6ptPYf3FheQ/fQcVl+v48mO3fp1Ucc\n5C2Tp1RBcsBGxh75Y0m2hXB/4RgeF4lv4/xQKgfLAhhWB4gEVk/+EmQNooBaMKXC\nAHUoYjHHEOmxdY8sQ0cQcg==\n-----END PRIVATE KEY-----\n",
@@ -37,39 +35,6 @@ const pointsRef = db.ref('points');
 
 // Middleware para servir archivos estáticos (HTML, JS, CSS)
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Funciones para manejar almacenamiento
-async function readPoints() {
-    if (isVercel) {
-        // En Vercel, usar Firebase
-        const snapshot = await pointsRef.once('value');
-        return snapshot.val() || {};
-    } else {
-        // En localhost, usar points.json
-        try {
-            const data = await fs.readFile('points.json', 'utf8');
-            return JSON.parse(data);
-        } catch (error) {
-            console.error('Error reading points.json:', error);
-            return {};
-        }
-    }
-}
-
-async function writePoints(points_data) {
-    if (isVercel) {
-        // En Vercel, usar Firebase
-        await pointsRef.set(points_data);
-    } else {
-        // En localhost, usar points.json
-        try {
-            await fs.writeFile('points.json', JSON.stringify(points_data, null, 2));
-        } catch (error) {
-            console.error('Error writing to points.json:', error);
-            throw error;
-        }
-    }
-}
 
 // Ruta para manejar el postback de Wannads
 app.get('/postback', async (req, res) => {
@@ -97,8 +62,9 @@ app.get('/postback', async (req, res) => {
     }
 
     try {
-        // Leer los puntos actuales
-        let points_data = await readPoints();
+        // Leer los puntos actuales de Firebase
+        const snapshot = await pointsRef.once('value');
+        let points_data = snapshot.val() || {};
 
         // Inicializar los puntos del usuario si no existen
         if (!points_data[user_id]) {
@@ -109,14 +75,14 @@ app.get('/postback', async (req, res) => {
         points_data[user_id].amount += parseInt(reward);
         points_data[user_id].timestamp = Date.now();
 
-        // Guardar los puntos
-        await writePoints(points_data);
-        console.log('Points saved:', points_data[user_id]);
+        // Guardar los puntos en Firebase
+        await pointsRef.set(points_data);
+        console.log('Points saved to Firebase:', points_data[user_id]);
 
         console.log('Postback processed:', { user_id, reward });
         res.status(200).send('OK');
     } catch (error) {
-        console.error('Error saving points:', error);
+        console.error('Error saving to Firebase:', error);
         res.status(500).send('ERROR: Failed to save points');
     }
 });
@@ -132,7 +98,9 @@ app.get('/get-points', async (req, res) => {
     }
 
     try {
-        const points_data = await readPoints();
+        // Leer los puntos de Firebase
+        const snapshot = await pointsRef.once('value');
+        const points_data = snapshot.val() || {};
 
         if (!points_data[user_id]) {
             console.log('No points found for userId:', user_id);
@@ -143,17 +111,10 @@ app.get('/get-points', async (req, res) => {
         console.log('Points found for userId:', user_id, 'Amount:', user_points.amount);
         res.status(200).json({ amount: user_points.amount, timestamp: user_points.timestamp });
     } catch (error) {
-        console.error('Error reading points:', error);
+        console.error('Error reading from Firebase:', error);
         res.status(500).json({ error: 'Failed to read points' });
     }
 });
-
-// Iniciar el servidor (para pruebas locales)
-if (!process.env.VERCEL) {
-    app.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`);
-    });
-}
 
 // Exportar el servidor para Vercel
 module.exports = app;
