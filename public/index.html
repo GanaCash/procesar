@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>SurveyWall + Firebase</title>
+  <title>Ofertas y Puntos</title>
   <script type="module" src="/firebase.js"></script>
 </head>
 <body>
-  <h1>Ofertas y puntos</h1>
+  <h1>Ofertas y Puntos</h1>
   <p>Tu ID: <span id="uid">...</span></p>
   <p>Tus puntos: <span id="pts">0</span></p>
-  <iframe id="offer" width="100%" height="600"></iframe>
+  <iframe id="offerwall" width="100%" height="600" style="border:none;"></iframe>
 
   <script type="module">
     import { db, ref, get } from './firebase.js';
@@ -21,8 +21,8 @@
     }
     document.getElementById("uid").textContent = uid;
 
-    const offerwall = `https://wall.wannads.com/wall?appid=67e470e4062c6323316149&user_id=${uid}`;
-    document.getElementById("offer").src = offerwall;
+    const offerwallUrl = `https://wall.wannads.com/wall?appid=67e470e4062c6323316149&user_id=${uid}`;
+    document.getElementById("offerwall").src = offerwallUrl;
 
     const userRef = ref(db, `users/${uid}/points`);
     get(userRef).then(snapshot => {
