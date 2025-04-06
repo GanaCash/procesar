@@ -1,12 +1,11 @@
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
-// Configuración de Firebase Admin
 const serviceAccount = {
   "type": "service_account",
   "project_id": "invitaciones-7d704",
   "private_key_id": "61afaf872abf7ff31516c1b18e296dc0076e35ac",
-  "private_key": "-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCZGaNx0FVJXfwb...\\n-----END PRIVATE KEY-----\\n",
+  "private_key": "-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkq...\\n-----END PRIVATE KEY-----\\n",
   "client_email": "firebase-adminsdk-fbsvc@invitaciones-7d704.iam.gserviceaccount.com",
   "client_id": "113246253994987920135",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -18,7 +17,7 @@ const serviceAccount = {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://invitaciones-7d704-default-rtdb.europe-west1.firebasedatabase.app',
+    databaseURL: 'https://invitaciones-7d704-default-rtdb.europe-west1.firebasedatabase.app'
   });
 }
 
@@ -33,24 +32,25 @@ export default async function handler(req, res) {
   }
 
   const expectedSig = crypto
-    .createHash('md5')
+    .createHash("md5")
     .update(user_id + transaction_id + reward + SECRET)
-    .digest('hex');
+    .digest("hex");
 
-  if (signature !== expectedSig) {
-    return res.status(403).send("ERROR: Firma no coincide.");
+  if (expectedSig !== signature) {
+    return res.status(403).send("ERROR: Signature doesn't match.");
   }
 
-  const transRef = db.ref(`transactions/${transaction_id}`);
-  const snapshot = await transRef.once('value');
+  const ref = db.ref(`transactions/${transaction_id}`);
+  const snapshot = await ref.once('value');
   if (snapshot.exists()) {
     return res.status(200).send("OK - Duplicado");
   }
 
-  await transRef.set(true);
+  await ref.set(true);
+
   const userRef = db.ref(`users/${user_id}/points`);
-  const userSnapshot = await userRef.once('value');
-  const currentPoints = userSnapshot.val() || 0;
+  const userSnap = await userRef.once('value');
+  const currentPoints = userSnap.val() || 0;
   await userRef.set(currentPoints + parseInt(reward));
 
   return res.status(200).send("OK");
